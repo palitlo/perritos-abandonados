@@ -28,3 +28,22 @@ create policy "Cualquiera puede marcar un perrito"
 -- Si más adelante querés moderar (marcar como "rescatado", borrar spam),
 -- lo mejor es hacerlo desde el Table Editor de Supabase o agregar un login
 -- de administrador.
+
+
+-- ============================================================
+-- Fotos subidas directamente (bucket de Storage "fotos")
+-- El bucket ya se creó como público. Estas políticas son las que
+-- faltan para que cualquiera pueda subir y ver esas fotos.
+-- ============================================================
+
+create policy "Cualquiera puede subir fotos de perritos"
+  on storage.objects for insert
+  with check (bucket_id = 'fotos');
+
+create policy "Cualquiera puede ver fotos de perritos"
+  on storage.objects for select
+  using (bucket_id = 'fotos');
+
+-- Tampoco acá se permite update/delete público, por la misma razón
+-- que en la tabla perritos: evitar que se borren o reemplacen fotos
+-- de otras personas desde el navegador.

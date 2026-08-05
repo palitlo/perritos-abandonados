@@ -15,9 +15,11 @@ perrito abandonado, para que otros puedan ayudarlo o rescatarlo.
    del archivo [`supabase.sql`](./supabase.sql) de este repo. Esto crea la
    tabla `perritos` y los permisos para que cualquiera pueda ver y marcar
    perritos, sin poder borrar los de otros.
-4. Andá a **Project Settings > API** y copiá:
+4. Andá a **Storage** y creá un bucket nuevo llamado exactamente `fotos`,
+   marcado como **público**. Ahí se guardan las fotos que suba la gente.
+5. Andá a **Project Settings > API** y copiá:
    - `Project URL`
-   - `anon public` key
+   - `anon public` key (o `publishable` key, en proyectos nuevos)
 
 ## 2. Configurar las variables de entorno
 
@@ -54,15 +56,21 @@ Abrí http://localhost:3000
 
 - Cualquier visitante puede hacer click en el mapa para marcar un perrito:
   se abre un formulario chico donde pone una descripción, estado (visto /
-  en riesgo / ya rescatado) y opcionalmente una URL de foto.
+  en riesgo / ya rescatado) y opcionalmente una foto (desde la cámara o la
+  galería del celular).
+- La foto se comprime automáticamente en el navegador antes de subirse
+  (máximo ~1280px de ancho), para no gastar de más el almacenamiento
+  gratuito de Supabase. Con eso entran más de 2500 fotos en el 1GB gratis.
 - Todos los marcadores se guardan en Supabase y se muestran a todos los
   visitantes en tiempo real (al recargar la página).
 - No hace falta cuenta ni login para marcar un perrito — está pensado para
   que sea lo más fácil posible de usar.
+- El mapa arranca centrado en Cañuelas, Buenos Aires, y tiene un buscador
+  de direcciones (usando Nominatim/OpenStreetMap, gratis) para ubicarse
+  rápido en cualquier punto.
 
 ## Posibles mejoras a futuro
 
-- Subida de fotos directa (con Supabase Storage) en vez de pegar una URL.
 - Panel de moderación para borrar marcadores duplicados o spam.
 - Filtro por estado (solo mostrar "en riesgo", etc.).
 - Botón de "compartir ubicación actual" usando geolocalización del navegador.

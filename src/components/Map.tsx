@@ -10,6 +10,9 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import { supabase, Perrito } from "@/lib/supabaseClient";
+import { compressImage } from "@/lib/compressImage";
+
+const MAX_ORIGINAL_FILE_MB = 15;
 
 // Cañuelas, Buenos Aires — centro y área de búsqueda por defecto.
 const CANUELAS_CENTER: [number, number] = [-35.0505, -58.7626];
@@ -154,12 +157,31 @@ function NewMarkerForm({
   onSaved: () => void;
 }) {
   const [descripcion, setDescripcion] = useState("");
-  const [fotoUrl, setFotoUrl] = useState("");
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [estado, setEstado] = useState("visto");
   const [saving, setSaving] = useState(false);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!point) return null;
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setError(null);
+    if (!file) {
+      setFotoFile(null);
+      setFotoPreview(null);
+      return;
+    }
+    if (file.size > MAX_ORIGINAL_FILE_MB * 1024 * 1024) {
+      setError(`La foto es muy pesada (máx. ${MAX_ORIGINAL_FILE_MB}MB).`);
+      e.target.value = "";
+      return;
+    }
+    setFotoFile(file);
+    setFotoPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,11 +191,35 @@ function NewMarkerForm({
     }
     setSaving(true);
     setError(null);
+
+    let fotoUrl: string | null = null;
+    if (fotoFile) {
+      setUploadingFoto(true);
+      try {
+        const compressed = await compressImage(fotoFile);
+        const path = `${crypto.randomUUID()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from("fotos")
+          .upload(path, compressed, { contentType: "image/jpeg" });
+        if (uploadError) throw uploadError;
+        const { data: publicData } = supabase.storage
+          .from("fotos")
+          .getPublicUrl(path);
+        fotoUrl = publicData.publicUrl;
+      } catch {
+        setUploadingFoto(false);
+        setSaving(false);
+        setError("No se pudo subir la foto. Probá de nuevo.");
+        return;
+      }
+      setUploadingFoto(false);
+    }
+
     const { error } = await supabase.from("perritos").insert({
       lat: point.lat,
       lng: point.lng,
       descripcion: descripcion.trim(),
-      foto_url: fotoUrl.trim() || null,
+      foto_url: fotoUrl,
       estado,
     });
     setSaving(false);
@@ -182,7 +228,8 @@ function NewMarkerForm({
       return;
     }
     setDescripcion("");
-    setFotoUrl("");
+    setFotoFile(null);
+    setFotoPreview(null);
     onSaved();
   };
 
@@ -198,12 +245,25 @@ function NewMarkerForm({
             onChange={(e) => setDescripcion(e.target.value)}
             rows={3}
           />
-          <input
-            className="border rounded p-1 text-sm"
-            placeholder="URL de foto (opcional)"
-            value={fotoUrl}
-            onChange={(e) => setFotoUrl(e.target.value)}
-          />
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-600">
+              Foto (opcional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFotoChange}
+              className="text-xs"
+            />
+            {fotoPreview && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={fotoPreview}
+                alt="Vista previa"
+                className="w-full h-24 object-cover rounded"
+              />
+            )}
+          </div>
           <select
             className="border rounded p-1 text-sm"
             value={estado}
@@ -227,7 +287,11 @@ function NewMarkerForm({
               disabled={saving}
               className="text-xs px-2 py-1 rounded bg-orange-500 text-white disabled:opacity-50"
             >
-              {saving ? "Guardando..." : "Guardar"}
+              {uploadingFoto
+                ? "Subiendo foto..."
+                : saving
+                ? "Guardando..."
+                : "Guardar"}
             </button>
           </div>
         </form>
