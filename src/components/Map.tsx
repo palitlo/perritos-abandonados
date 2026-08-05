@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -10,6 +10,103 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import { supabase, Perrito } from "@/lib/supabaseClient";
+
+// Cañuelas, Buenos Aires — centro y área de búsqueda por defecto.
+const CANUELAS_CENTER: [number, number] = [-35.0505, -58.7626];
+// Caja aproximada [lonMin, latMax, lonMax, latMin] para darle prioridad a
+// resultados de búsqueda cercanos a Cañuelas (sin excluir el resto del país).
+const CANUELAS_VIEWBOX = "-58.95,-34.90,-58.55,-35.25";
+
+type SearchResult = {
+  display_name: string;
+  lat: string;
+  lon: string;
+};
+
+function SearchBar({ mapRef }: { mapRef: React.RefObject<L.Map | null> }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setSearching(true);
+    setError(null);
+    setResults([]);
+    try {
+      const url = new URL("https://nominatim.openstreetmap.org/search");
+      url.searchParams.set("format", "json");
+      url.searchParams.set("q", query.trim());
+      url.searchParams.set("countrycodes", "ar");
+      url.searchParams.set("viewbox", CANUELAS_VIEWBOX);
+      url.searchParams.set("bounded", "0");
+      url.searchParams.set("limit", "5");
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error("bad response");
+      const data: SearchResult[] = await res.json();
+      if (data.length === 0) {
+        setError("No se encontró esa dirección o lugar.");
+      } else {
+        setResults(data);
+      }
+    } catch {
+      setError("No se pudo buscar. Intentá de nuevo.");
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const goTo = (r: SearchResult) => {
+    mapRef.current?.flyTo([parseFloat(r.lat), parseFloat(r.lon)], 16);
+    setResults([]);
+    setQuery(r.display_name);
+  };
+
+  return (
+    <div className="absolute top-2 left-2 z-[1000] w-[min(320px,calc(100vw-1rem))]">
+      <form
+        onSubmit={handleSearch}
+        className="flex gap-1 bg-white rounded shadow px-1 py-1"
+      >
+        <input
+          className="flex-1 text-sm px-2 py-1 outline-none min-w-0"
+          placeholder="Buscar dirección o lugar en Cañuelas..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button
+          type="submit"
+          disabled={searching}
+          className="text-xs px-2 py-1 rounded bg-orange-500 text-white disabled:opacity-50 shrink-0"
+        >
+          {searching ? "..." : "Buscar"}
+        </button>
+      </form>
+      {error && (
+        <div className="mt-1 bg-white rounded shadow px-2 py-1 text-xs text-red-600">
+          {error}
+        </div>
+      )}
+      {results.length > 0 && (
+        <ul className="mt-1 bg-white rounded shadow overflow-hidden max-h-60 overflow-y-auto">
+          {results.map((r, i) => (
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => goTo(r)}
+                className="w-full text-left text-xs px-2 py-2 hover:bg-orange-50 border-b last:border-b-0"
+              >
+                {r.display_name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // Fix default marker icons (Leaflet + Next.js/webpack issue).
 // Emojis fall outside Latin1, so btoa() can't encode them directly —
@@ -143,6 +240,7 @@ export default function Map() {
   const [perritos, setPerritos] = useState<Perrito[]>([]);
   const [newPoint, setNewPoint] = useState<NewPoint>(null);
   const [loading, setLoading] = useState(true);
+  const mapRef = useRef<L.Map | null>(null);
 
   const loadPerritos = async () => {
     setLoading(true);
@@ -158,18 +256,18 @@ export default function Map() {
     loadPerritos();
   }, []);
 
-  const defaultCenter: [number, number] = [-34.6037, -58.3816]; // Buenos Aires
-
   return (
     <div className="absolute inset-0">
+      <SearchBar mapRef={mapRef} />
       {loading && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 px-3 py-1 rounded-full text-xs shadow">
           Cargando perritos...
         </div>
       )}
       <MapContainer
-        center={defaultCenter}
-        zoom={12}
+        ref={mapRef}
+        center={CANUELAS_CENTER}
+        zoom={13}
         scrollWheelZoom
         style={{ width: "100%", height: "100%" }}
       >
