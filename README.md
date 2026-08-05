@@ -68,9 +68,22 @@ Abrí http://localhost:3000
 - El mapa arranca centrado en Cañuelas, Buenos Aires, y tiene un buscador
   de direcciones (usando Nominatim/OpenStreetMap, gratis) para ubicarse
   rápido en cualquier punto.
+- Cada perrito marcado muestra un número visible ("Perrito #7") en su
+  cartel. Sirve para identificarlo fácil cuando alguien lo rescata: en el
+  **Table Editor** de Supabase (tabla `perritos`) podés buscar por ese
+  número en la columna `numero` y borrar esa fila puntual.
+
+## Cómo borrar un perrito ya resuelto
+
+1. Anotá el número que aparece en el cartel del mapa (ej. "Perrito #7").
+2. Andá a tu proyecto de Supabase → **Table Editor** → tabla `perritos`.
+3. Buscá la fila donde `numero` sea ese valor y borrala (o cambiale el
+   `estado` a `rescatado` si preferís dejarla como registro histórico en
+   vez de borrarla).
 
 ## Posibles mejoras a futuro
 
-- Panel de moderación para borrar marcadores duplicados o spam.
+- Panel de moderación dentro del propio sitio (sin tener que entrar a
+  Supabase) para borrar o actualizar el estado de un perrito.
 - Filtro por estado (solo mostrar "en riesgo", etc.).
 - Botón de "compartir ubicación actual" usando geolocalización del navegador.

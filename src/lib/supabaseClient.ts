@@ -7,6 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type Perrito = {
   id: string;
+  numero: number;
   lat: number;
   lng: number;
   descripcion: string;

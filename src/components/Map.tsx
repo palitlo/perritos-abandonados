@@ -357,6 +357,9 @@ export default function Map() {
           <Marker key={p.id} position={[p.lat, p.lng]} icon={dogIcon}>
             <Popup>
               <div className="flex flex-col gap-1 max-w-[220px]">
+                <span className="text-[11px] font-semibold text-orange-600">
+                  Perrito #{p.numero}
+                </span>
                 {p.foto_url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
