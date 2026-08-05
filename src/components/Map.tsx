@@ -326,7 +326,6 @@ function NewMarkerForm({
             onChange={(e) => setEstado(e.target.value)}
           >
             <option value="visto">Visto recientemente</option>
-            <option value="rescatado">Ya fue rescatado</option>
             <option value="en_riesgo">En riesgo / necesita ayuda urgente</option>
           </select>
           {error && <span className="text-red-600 text-xs">{error}</span>}
