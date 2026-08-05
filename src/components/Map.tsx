@@ -161,7 +161,7 @@ export default function Map() {
   const defaultCenter: [number, number] = [-34.6037, -58.3816]; // Buenos Aires
 
   return (
-    <div className="relative w-full h-full">
+    <div className="absolute inset-0">
       {loading && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 px-3 py-1 rounded-full text-xs shadow">
           Cargando perritos...
