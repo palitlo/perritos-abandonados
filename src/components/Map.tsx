@@ -163,6 +163,7 @@ function NewMarkerForm({
   const [saving, setSaving] = useState(false);
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!point) return null;
 
@@ -250,11 +251,19 @@ function NewMarkerForm({
               Foto (opcional)
             </label>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={handleFotoChange}
-              className="text-xs"
+              className="hidden"
             />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs px-2 py-1.5 rounded border border-gray-300 bg-gray-50 hover:bg-gray-100 text-left"
+            >
+              {fotoFile ? `📷 ${fotoFile.name}` : "📷 Elegir o sacar foto"}
+            </button>
             {fotoPreview && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
