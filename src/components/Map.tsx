@@ -26,6 +26,53 @@ type SearchResult = {
   lon: string;
 };
 
+const ADMIN_STORAGE_KEY = "admin_password";
+
+function AdminBar({
+  adminPassword,
+  setAdminPassword,
+}: {
+  adminPassword: string | null;
+  setAdminPassword: (p: string | null) => void;
+}) {
+  const handleLogin = () => {
+    const pass = window.prompt(
+      "Contraseña de administrador (para marcar rescatados / eliminar):"
+    );
+    if (pass) {
+      sessionStorage.setItem(ADMIN_STORAGE_KEY, pass);
+      setAdminPassword(pass);
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem(ADMIN_STORAGE_KEY);
+    setAdminPassword(null);
+  };
+
+  return (
+    <div className="absolute top-2 right-2 z-[1000]">
+      {adminPassword ? (
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="text-xs px-2 py-1.5 rounded bg-white shadow font-medium text-green-700 hover:bg-gray-50"
+        >
+          🔓 Modo admin activo — salir
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleLogin}
+          className="text-xs px-2 py-1.5 rounded bg-white shadow font-medium text-gray-600 hover:bg-gray-50"
+        >
+          🔒 Acceso equipo
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SearchBar({ mapRef }: { mapRef: React.RefObject<L.Map | null> }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -313,6 +360,7 @@ export default function Map() {
   const [perritos, setPerritos] = useState<Perrito[]>([]);
   const [newPoint, setNewPoint] = useState<NewPoint>(null);
   const [loading, setLoading] = useState(true);
+  const [adminPassword, setAdminPassword] = useState<string | null>(null);
   const mapRef = useRef<L.Map | null>(null);
 
   const loadPerritos = async () => {
@@ -327,11 +375,39 @@ export default function Map() {
 
   useEffect(() => {
     loadPerritos();
+    setAdminPassword(sessionStorage.getItem(ADMIN_STORAGE_KEY));
   }, []);
+
+  const handleModerar = async (id: string, accion: "rescatado" | "eliminar") => {
+    if (!adminPassword) return;
+    if (
+      accion === "eliminar" &&
+      !window.confirm("¿Eliminar este perrito del mapa? No se puede deshacer.")
+    ) {
+      return;
+    }
+    const res = await fetch("/api/moderar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, accion, password: adminPassword }),
+    });
+    if (res.status === 401) {
+      window.alert("Contraseña incorrecta. Volvé a ingresar.");
+      sessionStorage.removeItem(ADMIN_STORAGE_KEY);
+      setAdminPassword(null);
+      return;
+    }
+    if (!res.ok) {
+      window.alert("No se pudo completar la acción. Probá de nuevo.");
+      return;
+    }
+    loadPerritos();
+  };
 
   return (
     <div className="absolute inset-0">
       <SearchBar mapRef={mapRef} />
+      <AdminBar adminPassword={adminPassword} setAdminPassword={setAdminPassword} />
       {loading && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 px-3 py-1 rounded-full text-xs shadow">
           Cargando perritos...
@@ -380,6 +456,26 @@ export default function Map() {
                 <span className="text-[10px] text-gray-400">
                   {new Date(p.created_at).toLocaleDateString()}
                 </span>
+                {adminPassword && (
+                  <div className="flex gap-2 mt-1 border-t pt-1">
+                    {p.estado !== "rescatado" && (
+                      <button
+                        type="button"
+                        onClick={() => handleModerar(p.id, "rescatado")}
+                        className="text-[11px] px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700"
+                      >
+                        ✅ Marcar rescatado
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleModerar(p.id, "eliminar")}
+                      className="text-[11px] px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+                    >
+                      🗑️ Eliminar
+                    </button>
+                  </div>
+                )}
               </div>
             </Popup>
           </Marker>

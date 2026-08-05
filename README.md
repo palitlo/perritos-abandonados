@@ -33,7 +33,12 @@ cp .env.local.example .env.local
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+SUPABASE_SECRET_KEY=tu-secret-key
+ADMIN_PASSWORD=elegí-una-contraseña-fuerte
 ```
+
+`SUPABASE_SECRET_KEY` y `ADMIN_PASSWORD` son secretas (sin prefijo
+`NEXT_PUBLIC_`): solo las usa el servidor, nunca llegan al navegador.
 
 ## 3. Correr en local
 
@@ -48,8 +53,8 @@ Abrí http://localhost:3000
 
 1. Subí este proyecto a un repositorio de GitHub.
 2. En https://vercel.com, importá el repositorio.
-3. En **Environment Variables**, agregá las mismas dos variables de
-   `.env.local` (`NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+3. En **Environment Variables**, agregá las cuatro variables de
+   `.env.local`.
 4. Deploy. Listo, el sitio queda público.
 
 ## Cómo funciona
@@ -73,17 +78,30 @@ Abrí http://localhost:3000
   **Table Editor** de Supabase (tabla `perritos`) podés buscar por ese
   número en la columna `numero` y borrar esa fila puntual.
 
-## Cómo borrar un perrito ya resuelto
+## Modo administrador (marcar rescatado / eliminar)
 
-1. Anotá el número que aparece en el cartel del mapa (ej. "Perrito #7").
-2. Andá a tu proyecto de Supabase → **Table Editor** → tabla `perritos`.
-3. Buscá la fila donde `numero` sea ese valor y borrala (o cambiale el
-   `estado` a `rescatado` si preferís dejarla como registro histórico en
-   vez de borrarla).
+Arriba a la derecha del mapa hay un botón "🔒 Acceso equipo". Cualquier
+persona a la que le compartas la contraseña de `ADMIN_PASSWORD` puede:
+
+- Tocar ese botón e ingresar la contraseña (queda guardada en su navegador
+  hasta que cierre la pestaña o toque "salir" — no hace falta escribirla
+  cada vez).
+- Una vez adentro, en el cartel de cada perrito aparecen dos botones
+  nuevos: **✅ Marcar rescatado** y **🗑️ Eliminar**.
+
+La contraseña se valida en el servidor (`src/app/api/moderar/route.ts`),
+nunca en el navegador, así que aunque alguien mire el código del sitio no
+puede saltearla. Cargar un perrito nuevo sigue sin pedir nada — esa parte
+sigue abierta a cualquiera a propósito, para que reportar sea lo más fácil
+posible.
+
+Si en algún momento querés cambiar quién tiene acceso, simplemente cambiá
+`ADMIN_PASSWORD` en Vercel (Project Settings → Environment Variables) y
+volvé a compartir la nueva contraseña con tu equipo.
 
 ## Posibles mejoras a futuro
 
-- Panel de moderación dentro del propio sitio (sin tener que entrar a
-  Supabase) para borrar o actualizar el estado de un perrito.
+- Login individual por persona (en vez de una contraseña compartida), con
+  Supabase Auth, si el equipo crece mucho.
 - Filtro por estado (solo mostrar "en riesgo", etc.).
 - Botón de "compartir ubicación actual" usando geolocalización del navegador.
