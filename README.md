@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🐶 Perritos Abandonados
 
-## Getting Started
+Sitio benéfico donde cualquier persona puede marcar en un mapa dónde vio un
+perrito abandonado, para que otros puedan ayudarlo o rescatarlo.
 
-First, run the development server:
+- Mapa: OpenStreetMap + Leaflet (gratis, sin API key)
+- Base de datos: Supabase (Postgres gratis)
+- Deploy: Vercel
+
+## 1. Crear el proyecto en Supabase
+
+1. Andá a https://supabase.com y creá una cuenta / iniciá sesión (es gratis).
+2. Creá un proyecto nuevo (elegí cualquier nombre, ej. `perritos-abandonados`).
+3. Cuando el proyecto esté listo, andá a **SQL Editor** y ejecutá el contenido
+   del archivo [`supabase.sql`](./supabase.sql) de este repo. Esto crea la
+   tabla `perritos` y los permisos para que cualquiera pueda ver y marcar
+   perritos, sin poder borrar los de otros.
+4. Andá a **Project Settings > API** y copiá:
+   - `Project URL`
+   - `anon public` key
+
+## 2. Configurar las variables de entorno
+
+Copiá `.env.local.example` a `.env.local` y completá con los datos de
+Supabase:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.local.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 3. Correr en local
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+Abrí http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+## 4. Deploy en Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Subí este proyecto a un repositorio de GitHub.
+2. En https://vercel.com, importá el repositorio.
+3. En **Environment Variables**, agregá las mismas dos variables de
+   `.env.local` (`NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+4. Deploy. Listo, el sitio queda público.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Cómo funciona
 
-## Deploy on Vercel
+- Cualquier visitante puede hacer click en el mapa para marcar un perrito:
+  se abre un formulario chico donde pone una descripción, estado (visto /
+  en riesgo / ya rescatado) y opcionalmente una URL de foto.
+- Todos los marcadores se guardan en Supabase y se muestran a todos los
+  visitantes en tiempo real (al recargar la página).
+- No hace falta cuenta ni login para marcar un perrito — está pensado para
+  que sea lo más fácil posible de usar.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Posibles mejoras a futuro
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Subida de fotos directa (con Supabase Storage) en vez de pegar una URL.
+- Panel de moderación para borrar marcadores duplicados o spam.
+- Filtro por estado (solo mostrar "en riesgo", etc.).
+- Botón de "compartir ubicación actual" usando geolocalización del navegador.
