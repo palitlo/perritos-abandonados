@@ -50,26 +50,22 @@ function AdminBar({
     setAdminPassword(null);
   };
 
-  return (
-    <div className="absolute top-2 right-2 z-[1000]">
-      {adminPassword ? (
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="text-xs px-2 py-1.5 rounded bg-white shadow font-medium text-green-700 hover:bg-gray-50"
-        >
-          🔓 Modo admin activo — salir
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={handleLogin}
-          className="text-xs px-2 py-1.5 rounded bg-white shadow font-medium text-gray-600 hover:bg-gray-50"
-        >
-          🔒 Acceso equipo
-        </button>
-      )}
-    </div>
+  return adminPassword ? (
+    <button
+      type="button"
+      onClick={handleLogout}
+      className="shrink-0 text-xs px-2 py-1.5 rounded bg-white shadow font-medium text-green-700 hover:bg-gray-50"
+    >
+      🔓 Admin — salir
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={handleLogin}
+      className="shrink-0 text-xs px-2 py-1.5 rounded bg-white shadow font-medium text-gray-600 hover:bg-gray-50"
+    >
+      🔒 Acceso equipo
+    </button>
   );
 }
 
@@ -115,7 +111,7 @@ function SearchBar({ mapRef }: { mapRef: React.RefObject<L.Map | null> }) {
   };
 
   return (
-    <div className="absolute top-2 left-2 z-[1000] w-[min(320px,calc(100vw-1rem))]">
+    <div className="flex-1 min-w-[180px] max-w-[320px]">
       <form
         onSubmit={handleSearch}
         className="flex gap-1 bg-white rounded shadow px-1 py-1"
@@ -405,8 +401,10 @@ export default function Map() {
 
   return (
     <div className="absolute inset-0">
-      <SearchBar mapRef={mapRef} />
-      <AdminBar adminPassword={adminPassword} setAdminPassword={setAdminPassword} />
+      <div className="absolute top-2 left-2 right-2 z-[1000] flex flex-wrap items-start gap-2">
+        <SearchBar mapRef={mapRef} />
+        <AdminBar adminPassword={adminPassword} setAdminPassword={setAdminPassword} />
+      </div>
       {loading && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 px-3 py-1 rounded-full text-xs shadow">
           Cargando perritos...
